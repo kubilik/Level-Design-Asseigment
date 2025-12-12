@@ -6,17 +6,26 @@ public class PanelInteraction : MonoBehaviour
     public PanelType panelType;
 
     private bool playerIsNear = false;
-    // PlayerController yerine Player script'i tutulacak
     private Player playerScript;
+
+    [Header("Görsel Ayarlar")]
+    // 1. Panel üzerindeki anahtarın yerleşeceği alan
+    public GameObject keySlotObject;
+    // 2. Panel üzerindeki durum lambası
+    public GameObject panelLightObject;
+
+    // Unity editöründen buraya aktif (YEŞİL) materyali sürükleyin
+    public Material activeMaterial;
+
+    // Panonun zaten aktif olup olmadığını tutan değişken
+    public bool isPanelActivated = false; // PUZZLE MANAGER için public yaptık!
 
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
             playerIsNear = true;
-            // PlayerController yerine Player kodunu al
             playerScript = other.GetComponent<Player>();
-            // İPUCU: Burada oyuncuya "E tuşuna bas" gibi bir UI ipucu gösterebilirsiniz.
         }
     }
 
@@ -26,13 +35,11 @@ public class PanelInteraction : MonoBehaviour
         {
             playerIsNear = false;
             playerScript = null;
-            // İPUCU: Burada UI ipucunu gizleyebilirsiniz.
         }
     }
 
     private void Update()
     {
-        // Oyuncu yakındaysa VE E tuşuna basmışsa kontrol et.
         if (playerIsNear && playerScript != null && Input.GetKeyDown(KeyCode.E))
         {
             TryActivatePanel();
@@ -41,22 +48,27 @@ public class PanelInteraction : MonoBehaviour
 
     private void TryActivatePanel()
     {
+        if (isPanelActivated)
+        {
+            Debug.Log(panelType.ToString() + " zaten aktif.");
+            return;
+        }
+
         bool hasKey = false;
 
-        // Hangi panonun hangi anahtara ihtiyacı olduğunu kontrol et
         switch (panelType)
         {
             case PanelType.Panel1:
                 hasKey = playerScript.exitKey1;
                 if (hasKey) playerScript.exitKey1 = false; // Anahtarı kullan
                 break;
-            case PanelType.Panel2:
+            case PanelType.Panel2: // Diğer panelleri ekleyin
                 hasKey = playerScript.exitKey2;
-                if (hasKey) playerScript.exitKey2 = false; // Anahtarı kullan
+                if (hasKey) playerScript.exitKey2 = false;
                 break;
-            case PanelType.Panel3:
+            case PanelType.Panel3: // Diğer panelleri ekleyin
                 hasKey = playerScript.exitKey3;
-                if (hasKey) playerScript.exitKey3 = false; // Anahtarı kullan
+                if (hasKey) playerScript.exitKey3 = false;
                 break;
         }
 
@@ -72,14 +84,25 @@ public class PanelInteraction : MonoBehaviour
 
     private void ActivatePanelSuccess()
     {
-        Debug.Log(panelType.ToString() + " başarıyla aktive edildi! Puzzle ilerliyor.");
-        // Gerekli bulmaca olaylarını tetikleyin (kapı açmak, ışık yakmak vb.)
-        // Örneğin: gameObject.SetActive(false); // Panoyu pasif yap
+        Debug.Log(panelType.ToString() + " başarıyla aktive edildi!");
+        isPanelActivated = true; // Pano aktif edildi
+
+        // 1. Anahtar Yuvası ve Panel Işığını Yeşil Yap
+        if (keySlotObject != null && activeMaterial != null)
+        {
+            keySlotObject.GetComponent<Renderer>().material = activeMaterial;
+        }
+        if (panelLightObject != null && activeMaterial != null)
+        {
+            panelLightObject.GetComponent<Renderer>().material = activeMaterial;
+        }
+
+        // 2. Puzzle Yöneticisine haber ver
+        PuzzleManager.Instance.PanelActivated();
     }
 
     private void ActivatePanelFailure()
     {
         Debug.Log("Bu panoyu aktive etmek için doğru anahtara sahip değilsiniz.");
-        // Oyuncuya sesli veya görsel bir geri bildirim verin
     }
 }
